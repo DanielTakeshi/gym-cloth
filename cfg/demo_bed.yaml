@@ -1,0 +1,66 @@
+# Use as the configuration file for the environment for bed-making.
+
+# ------------------------------------------------------------------------------
+# Cloth parameters, should be loosely based on `cloth_from_184.,yaml`.
+# ------------------------------------------------------------------------------
+
+cloth:
+    damping: 2.0            # Too slow if it's much above 2. :(
+    density: 200.0          # Default is 150, increasing still results in a 'wispy' look, 400+ mean ugly self-collisions.
+    ks: 5000.0              # Default is 5000.
+    enable_structural: true # Enable structural constraints.
+    enable_shearing: true   # Enable shearing constraints.
+    enable_bending: true    # Enable bending constraints.
+    orientation: 1          # Manages xyz orientation.
+    width: 1                # Set to 1 for simplicity.
+    height: 1               # Set to 1 for simplicity.
+    num_width_points: 25    # Number of points in x direction.
+    num_height_points: 25   # Number of points in y direction.
+    thickness: 0.0200       # For self-collisions; we do not want layers to collide.
+    pin_cond: 'y=0'         # Determines which points are pinned. See `cloth.pyx`.
+    color_pts: 'diag1'      # Determines which points are colored. See `cloth.pyx`.
+    plane_friction: 1.0     # Corresopnds to 184's 'friction' in the 'plane' struct. Assume plane has normal=(0,0,1).
+    tear_thresh: 2.0        # Tear thresh. I've found 2 to 3 works well. Set to >100 to basically ignore this feature.
+
+frames_per_sec: 30          # In theory, but in practice we really render more often
+simulation_steps: 30        # Actually an important hyperparameter to match with 184-based code.
+
+# ------------------------------------------------------------------------------
+# General 'env' parameters
+# ------------------------------------------------------------------------------
+
+env:
+    max_actions: 20         # Max number of actions per episode. This should be on the order of 5 to 50.
+    max_z_threshold: 5      # For now, we get high reward if all points are below this threshold (should fix)
+    iters_up: 80            # For pulling cloth upwards (only z changes)
+    iters_up_rest: 80       # Resting after pulling cloth upwards.
+    iters_pull_max: 400     # Max number to pull; actions take a fraction of this.
+    iters_grip_rest: 350    # No-ops to let cloth settle while being gripped --- needed for realism
+    iters_rest: 1200        # No-ops to let the cloth rest (do larger to test if folds are stable...)
+    updates_per_move: 1     # Should really be 1, ignore this?
+    reduce_factor: 0.0020   # Multiply raw directions by this to make actions smaller
+    grip_radius: 0.009      # alternative: .003, larger radius means we grab more points
+    reward_type: 'coverage-delta'   # See `ClothEnv` for possible types.
+
+# ------------------------------------------------------------------------------
+# Initialization parameters. Let's assume we can pinpoint one of the four
+# corners to fold, and we can automatically determine the coordinate to
+# initially 'tension' from that. Corners: BL, BR, TL, TR (bottom/top,
+# left/right). The (0,0) corner is at the BL. Actually it might be good to
+# randomize but w/e. And we should know what stuff is pinned and what's not...
+# ------------------------------------------------------------------------------
+
+init:
+    type: 'bed-like'            # Type of initialization method [e.g. 'single-corner-fold', 'drop-vertical']
+    debug_matplotlib: False     # If we show matplotlib video of the initialization
+    render_opengl: True         # If we show opengl rendering
+
+# ------------------------------------------------------------------------------
+# Logging. We add the date before the last `.log` in the file name.
+# ------------------------------------------------------------------------------
+
+log:
+    level: debug                # Standard python logger level, use `info` or `debug`.
+    file: logs/example.log      # File to save the logging, for debugging later.
+
+seed: 1336                      # Random seed
