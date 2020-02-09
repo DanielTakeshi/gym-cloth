@@ -106,6 +106,7 @@ class ClothEnv(gym.Env):
         self._force_grab      = cfg['env']['force_grab']
         self._oracle_reveal   = cfg['env']['oracle_reveal']
         self._use_depth       = cfg['env']['use_depth']
+        self._use_rgbd        = cfg['env']['use_rgbd']
         self._radius_inc      = 0.02
         self.bounds = bounds  = (1, 1, 1)
         self.render_proc      = None
@@ -196,123 +197,132 @@ class ClothEnv(gym.Env):
             for pt in self.cloth.pts:
                 lst.extend([pt.x, pt.y, pt.z])
             return np.array(lst)
-
         elif self._obs_type == 'blender':
-            bhead = '/tmp/blender'
-            if not os.path.exists(bhead):
-                os.makedirs(bhead)
-
-            # Step 1: make obj file using trimesh, and save to directory.
-            wh = self.num_w
-            #wh = self.num_h
-            assert self.num_w == self.num_h  # TODO for now
-            cloth = np.array([[p.x, p.y, p.z] for p in self.cloth.pts])
-            assert cloth.shape[1] == 3, cloth.shape
-            faces = []
-            for r in range(wh-1):
-                for c in range(wh-1):
-                    pp = r*wh + c
-                    faces.append( [pp,   pp+wh, pp+1] )
-                    faces.append( [pp+1, pp+wh, pp+wh+1] )
-            tm = trimesh.Trimesh(vertices=cloth, faces=faces)
-            # Handle file naming. Hopefully won't be duplicates!
-            rank = '{}'.format(self._logger_idx)
-            step = '{}'.format(str(self.num_steps).zfill(3))
-            date = '{}'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-            base = 'gym-cloth-r{}-s{}-{}'.format(rank, step, date)
-            tm_path = join(bhead, base)
-            randnum = np.random.randint(1000000)  # np.random instead of np_random :-)
-            tm_path = '{}_r{}.obj'.format(tm_path, str(randnum).zfill(7))
-            tm.export(tm_path)
-
-            # Step 2: call blender to get image representation.  We assume the
-            # `blender` sub-package is at the same level as `envs`.  Use
-            # __dirname__ to get path, then switch to `blender` dir.  Also deal
-            # with data paths (for background frame) and different machines.
-
-            init_side = 1 if self.cloth.init_side else -1
-            #bfile = join(os.path.dirname(__file__), '../blender/get_image_rep.py') # 2.80
-            bfile = join(os.path.dirname(__file__), '../blender/get_image_rep_279.py')
-            frame_path = pkg_resources.resource_filename('gym_cloth', 'blender/frame0.obj')
-            floor_path = pkg_resources.resource_filename('gym_cloth', 'blender/floor.obj')
-
-            #Adi: Adding argument/flag for the oracle_reveal demonstrator
-            #Adi: Adding argument/flag for using depth images
-            #Adi: Adding argument for the floor obj path for more accurate depth images
-            #Adi: Adding flag for domain randomization
-            if sys.platform == 'darwin':
-                subprocess.call([
-                    '/Applications/Blender/blender.app/Contents/MacOS/blender',
-                    '--background', '--python', bfile, '--', tm_path,
-                    str(self._hd), str(self._wd), str(init_side), self._init_type,
-                    frame_path, self._oracle_reveal, self._use_depth, floor_path,
-                    self.__add_dom_rand]
-                )
+            # Ryan: implement RGBD
+            if self._use_rgbd == 'True':
+                img_rgb = self.get_blender_rep('False')
+                img_d = self.get_blender_rep('True')[:,:,0]
+                return np.dstack((img_rgb, img_d))
             else:
-                subprocess.call([
-                    'blender', '--background', '--python', bfile, '--', tm_path,
-                    str(self._hd), str(self._wd), str(init_side), self._init_type,
-                    frame_path, self._oracle_reveal, self._use_depth, floor_path,
-                    self.__add_dom_rand]
-                )
-            time.sleep(1)  # Wait a bit just in case
-
-            # Step 3: load image from directory saved by blender.
-            #Adi: Loading the occlusion state as well and saving it
-            blender_path = tm_path.replace('.obj','.png')
-            occlusion_path_pkl = tm_path.replace('.obj', '')
-            with open(occlusion_path_pkl, 'rb') as fp:
-                itemlist = pickle.load(fp)
-                self._occlusion_vec = itemlist
-
-            img = cv2.imread(blender_path)
-            assert img.shape == (self._hd, self._wd, 3), \
-                    'error, shape {}, idx {}'.format(img.shape, self._logger_idx)
-
-            if self._use_depth == 'True':
-                # Smooth the edges b/c of some triangles.
-                img = cv2.bilateralFilter(img, 7, 50, 50)
-                if self._add_dom_rand:
-                    gval = self.np_random.uniform(low=0.3, high=0.5)
-                    img = self._adjust_gamma(img, gamma=gval)
-                else:
-                    # One way of darkening it (use gamma around 0.3-0.5):
-                    img = self._adjust_gamma(img, gamma=0.4)
-                    # A second way of darkening it, this one darkens uniformly.
-                    #img = np.uint8( np.maximum(0, np.double(img)-50) )
-            else:
-                # Might as well randomize brightness if we're doing RGB.
-                if self._add_dom_rand:
-                    gval = self.np_random.uniform(low=0.8, high=1.2)
-                    img = self._adjust_gamma(img, gamma=gval)
-
-            # Edit: we're now doing this for RGB as well.
-            if self._add_dom_rand:
-                # Apply some noise ONLY AT THE END OF EVERYTHING. I think it's
-                # better to first generate a parameter, *then* do the noise.
-                #noise = self.np_random.normal(loc=0.0, scale=1.0, size=img.shape)
-                lim = self.np_random.uniform(low=-15.0, high=15.0)
-                noise = self.np_random.uniform(low=-lim, high=lim, size=img.shape)
-                img = np.minimum( np.maximum(np.double(img)+noise, 0), 255 )
-                img = np.uint8(img)
-
-            # If desired, save the images. Also save the resized version  --
-            # make sure it's not done before we do noise addition, etc!
-            #cv2.imwrite(blender_path, img)
-            #img_small = cv2.resize(img, dsize=(100,100))  # dsize=(width,height)
-
-            #cv2.imwrite(tm_path.replace('.obj','_small.png'), img_small)
-            # careful! only if we want to override paths!!
-            #cv2.imwrite(blender_path, img_small)
-            #time.sleep(2)
-
-            # Step 4: remaining book-keeping.
-            if os.path.isfile(tm_path):
-                os.remove(tm_path)
-            return img
-
+                return self.get_blender_rep(self._use_depth)
         else:
             raise ValueError(self._obs_type)
+
+    def get_blender_rep(self, use_depth):
+        """Ryan: put get_blender_rep in its own method so we can easily get RGBD images."""
+        bhead = '/tmp/blender'
+        if not os.path.exists(bhead):
+            os.makedirs(bhead)
+
+        # Step 1: make obj file using trimesh, and save to directory.
+        wh = self.num_w
+        #wh = self.num_h
+        assert self.num_w == self.num_h  # TODO for now
+        cloth = np.array([[p.x, p.y, p.z] for p in self.cloth.pts])
+        assert cloth.shape[1] == 3, cloth.shape
+        faces = []
+        for r in range(wh-1):
+            for c in range(wh-1):
+                pp = r*wh + c
+                faces.append( [pp,   pp+wh, pp+1] )
+                faces.append( [pp+1, pp+wh, pp+wh+1] )
+        tm = trimesh.Trimesh(vertices=cloth, faces=faces)
+        # Handle file naming. Hopefully won't be duplicates!
+        rank = '{}'.format(self._logger_idx)
+        step = '{}'.format(str(self.num_steps).zfill(3))
+        date = '{}'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        base = 'gym-cloth-r{}-s{}-{}'.format(rank, step, date)
+        tm_path = join(bhead, base)
+        randnum = np.random.randint(1000000)  # np.random instead of np_random :-)
+        tm_path = '{}_r{}.obj'.format(tm_path, str(randnum).zfill(7))
+        tm.export(tm_path)
+
+        # Step 2: call blender to get image representation.  We assume the
+        # `blender` sub-package is at the same level as `envs`.  Use
+        # __dirname__ to get path, then switch to `blender` dir.  Also deal
+        # with data paths (for background frame) and different machines.
+
+        init_side = 1 if self.cloth.init_side else -1
+        #bfile = join(os.path.dirname(__file__), '../blender/get_image_rep.py') # 2.80
+        bfile = join(os.path.dirname(__file__), '../blender/get_image_rep_279.py')
+        frame_path = pkg_resources.resource_filename('gym_cloth', 'blender/frame0.obj')
+        floor_path = pkg_resources.resource_filename('gym_cloth', 'blender/floor.obj')
+
+        #Adi: Adding argument/flag for the oracle_reveal demonstrator
+        #Adi: Adding argument/flag for using depth images
+        #Adi: Adding argument for the floor obj path for more accurate depth images
+        #Adi: Adding flag for domain randomization
+        if sys.platform == 'darwin':
+            subprocess.call([
+                '/Applications/Blender/blender.app/Contents/MacOS/blender',
+                '--background', '--python', bfile, '--', tm_path,
+                str(self._hd), str(self._wd), str(init_side), self._init_type,
+                frame_path, self._oracle_reveal, self._use_depth, floor_path,
+                self.__add_dom_rand]
+            )
+        else:
+            subprocess.call([
+                'blender', '--background', '--python', bfile, '--', tm_path,
+                str(self._hd), str(self._wd), str(init_side), self._init_type,
+                frame_path, self._oracle_reveal, self._use_depth, floor_path,
+                self.__add_dom_rand]
+            )
+        time.sleep(1)  # Wait a bit just in case
+
+        # Step 3: load image from directory saved by blender.
+        #Adi: Loading the occlusion state as well and saving it
+        blender_path = tm_path.replace('.obj','.png')
+        occlusion_path_pkl = tm_path.replace('.obj', '')
+        with open(occlusion_path_pkl, 'rb') as fp:
+            itemlist = pickle.load(fp)
+            self._occlusion_vec = itemlist
+
+        img = cv2.imread(blender_path)
+        assert img.shape == (self._hd, self._wd, 3), \
+                'error, shape {}, idx {}'.format(img.shape, self._logger_idx)
+
+        if self._use_depth == 'True':
+            # Smooth the edges b/c of some triangles.
+            img = cv2.bilateralFilter(img, 7, 50, 50)
+            if self._add_dom_rand:
+                gval = self.np_random.uniform(low=0.3, high=0.5)
+                img = self._adjust_gamma(img, gamma=gval)
+            else:
+                # One way of darkening it (use gamma around 0.3-0.5):
+                #img = self._adjust_gamma(img, gamma=0.4)
+                # A second way of darkening it, this one darkens uniformly.
+                # As of February 2020, this is what we use.
+                img = np.uint8( np.maximum(0, np.double(img)-50) )
+        else:
+            # Might as well randomize brightness if we're doing RGB.
+            if self._add_dom_rand:
+                gval = self.np_random.uniform(low=0.8, high=1.2)
+                img = self._adjust_gamma(img, gamma=gval)
+
+        # Edit: we're now doing this for RGB as well.
+        if self._add_dom_rand:
+            # Apply some noise ONLY AT THE END OF EVERYTHING. I think it's
+            # better to first generate a parameter, *then* do the noise.
+            #noise = self.np_random.normal(loc=0.0, scale=1.0, size=img.shape)
+            lim = self.np_random.uniform(low=-15.0, high=15.0)
+            noise = self.np_random.uniform(low=-lim, high=lim, size=img.shape)
+            img = np.minimum( np.maximum(np.double(img)+noise, 0), 255 )
+            img = np.uint8(img)
+
+        # If desired, save the images. Also save the resized version  --
+        # make sure it's not done before we do noise addition, etc!
+        #cv2.imwrite(blender_path, img)
+        #img_small = cv2.resize(img, dsize=(100,100))  # dsize=(width,height)
+
+        #cv2.imwrite(tm_path.replace('.obj','_small.png'), img_small)
+        # careful! only if we want to override paths!!
+        #cv2.imwrite(blender_path, img_small)
+        #time.sleep(2)
+
+        # Step 4: remaining book-keeping.
+        if os.path.isfile(tm_path):
+            os.remove(tm_path)
+        return img
 
     def seed(self, seed=None):
         """Apply the env seed.

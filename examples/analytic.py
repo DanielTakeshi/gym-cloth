@@ -751,7 +751,10 @@ if __name__ == "__main__":
     pp.add_argument("policy", type=str, help="name of the policy to use")
     pp.add_argument("--max_episodes", type=int, default=10)
     pp.add_argument("--seed", type=int)
+    pp.add_argument("--tier", type=int)
     args = pp.parse_args()
+    assert args.tier in [1,2,3], args.tier
+
     args.policy = (args.policy).lower()
     if args.policy == 'oracle':
         policy = OracleCornerPolicy()
@@ -777,7 +780,8 @@ if __name__ == "__main__":
 
     # Each time we use the environment, we need to pass in some configuration.
     args.file_path = fp = os.path.dirname(os.path.realpath(__file__))
-    args.cfg_file = join(fp, '../cfg/demo_baselines.yaml') # BASELINES!
+    #args.cfg_file = join(fp, '../cfg/demo_baselines.yaml') # BASELINES!
+    args.cfg_file = join(fp, '../cfg/{}_rgbd.yaml'.format(args.tier))
     args.render_path = join(fp, '../render/build')    # Must be compiled!
     args.result_path = join(fp, '../logs/{}'.format(result_pkl))
 

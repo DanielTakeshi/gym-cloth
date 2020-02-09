@@ -48,6 +48,7 @@ env:
     oracle_reveal: 'False'  # If 'True', we compute the occlusion vector every time Blender is called (should only be True if using corner revealing demonstrator)
     use_depth: 'False'      # If 'True', we use depth images for the training process instead of color images
     use_dom_rand: 'True'    # If 'True', we use domain randomization (camera pose, color, etc.)
+    use_rgbd: 'False'
 
 
 # ------------------------------------------------------------------------------
