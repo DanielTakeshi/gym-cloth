@@ -675,11 +675,11 @@ def run(args, policy):
         if seed == 1500 or seed == 1600:
             print('Ideally, avoid using these two seeds.')
             sys.exit()
-        stuff = '-seed-{}-clip_a-{}-delta_a-{}-obs-{}-depthimg-{}-{}_epis_{}'.format(seed,
-                    cfg['env']['clip_act_space'],
-                    cfg['env']['delta_actions'],
+        assert cfg['env']['clip_act_space'] and cfg['env']['delta_actions']
+        stuff = '-seed-{}-obs-{}-depth-{}-rgbd-{}-{}_epis_{}'.format(seed,
                     cfg['env']['obs_type'],
                     cfg['env']['use_depth'],
+                    cfg['env']['use_rgbd'],
                     cfg['init']['type'],
                     args.max_episodes
         )
@@ -781,7 +781,7 @@ if __name__ == "__main__":
     # Each time we use the environment, we need to pass in some configuration.
     args.file_path = fp = os.path.dirname(os.path.realpath(__file__))
     #args.cfg_file = join(fp, '../cfg/demo_baselines.yaml') # BASELINES!
-    args.cfg_file = join(fp, '../cfg/{}_rgbd.yaml'.format(args.tier))
+    args.cfg_file = join(fp, '../cfg/t{}_rgbd.yaml'.format(args.tier))
     args.render_path = join(fp, '../render/build')    # Must be compiled!
     args.result_path = join(fp, '../logs/{}'.format(result_pkl))
 

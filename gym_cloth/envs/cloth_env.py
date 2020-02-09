@@ -257,14 +257,14 @@ class ClothEnv(gym.Env):
                 '/Applications/Blender/blender.app/Contents/MacOS/blender',
                 '--background', '--python', bfile, '--', tm_path,
                 str(self._hd), str(self._wd), str(init_side), self._init_type,
-                frame_path, self._oracle_reveal, self._use_depth, floor_path,
+                frame_path, self._oracle_reveal, use_depth, floor_path,
                 self.__add_dom_rand]
             )
         else:
             subprocess.call([
                 'blender', '--background', '--python', bfile, '--', tm_path,
                 str(self._hd), str(self._wd), str(init_side), self._init_type,
-                frame_path, self._oracle_reveal, self._use_depth, floor_path,
+                frame_path, self._oracle_reveal, use_depth, floor_path,
                 self.__add_dom_rand]
             )
         time.sleep(1)  # Wait a bit just in case
@@ -281,17 +281,15 @@ class ClothEnv(gym.Env):
         assert img.shape == (self._hd, self._wd, 3), \
                 'error, shape {}, idx {}'.format(img.shape, self._logger_idx)
 
-        if self._use_depth == 'True':
+        print('\nUSE DEPTH {}\n'.format(use_depth))
+        if use_depth == 'True':
             # Smooth the edges b/c of some triangles.
             img = cv2.bilateralFilter(img, 7, 50, 50)
             if self._add_dom_rand:
                 gval = self.np_random.uniform(low=0.3, high=0.5)
-                img = self._adjust_gamma(img, gamma=gval)
+                #img = self._adjust_gamma(img, gamma=gval) # Don't use.
+                img = np.uint8( np.maximum(0, np.double(img)-50) )
             else:
-                # One way of darkening it (use gamma around 0.3-0.5):
-                #img = self._adjust_gamma(img, gamma=0.4)
-                # A second way of darkening it, this one darkens uniformly.
-                # As of February 2020, this is what we use.
                 img = np.uint8( np.maximum(0, np.double(img)-50) )
         else:
             # Might as well randomize brightness if we're doing RGB.
