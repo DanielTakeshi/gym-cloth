@@ -67,6 +67,9 @@ class Cloth(object):
         if random_state is not None:
             self.np_random = random_state
         else:
+            print('WARNING: we are creating a new np_random object with seed: {}'.format(
+                    self.params['seed']))
+            print('Normally, we want to be passing in an already created np_random.')
             self.np_random, _ = seeding.np_random(self.params['seed'])
         self.init_type = init_type = self.params['init']['type']
         self.init_side = (self.np_random.rand() > 0.5)
