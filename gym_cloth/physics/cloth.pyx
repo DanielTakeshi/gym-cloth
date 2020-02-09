@@ -74,10 +74,6 @@ class Cloth(object):
         self.init_type = init_type = self.params['init']['type']
         self.init_side = (self.np_random.rand() > 0.5)
 
-        # Hacky debugging solution.
-        print('Calling Cloth(), init type/side: {} and {}, seed {}'.format(
-                self.init_type, self.init_side, self.params['seed']))
-
         # Older code for matplotlib plots, but we may end up pinning cloth anyway.
         pin_cond  = self.params['cloth']['pin_cond']
         color_pts = self.params['cloth']['color_pts']
