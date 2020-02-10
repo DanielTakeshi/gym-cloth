@@ -15,3 +15,4 @@ subprocess32==3.5.3
 pyrender==0.1.25
 pyzmq==16.0.4
 trimesh==2.38.30
+opencv-python==4.2.0.32
