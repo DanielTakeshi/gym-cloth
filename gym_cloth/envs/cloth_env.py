@@ -115,6 +115,7 @@ class ClothEnv(gym.Env):
         self._occlusion_vec   = [True, True, True, True]
         self.__add_dom_rand   = cfg['env']['use_dom_rand']              # string
         self._add_dom_rand    = (self.__add_dom_rand.lower() == 'true') # boolean
+        self.dom_rand_params  = {} # Ryan: store domain randomization params to keep constant per episode
 
         if start_state_path is not None:
             with open(start_state_path, 'rb') as fh:
@@ -252,20 +253,33 @@ class ClothEnv(gym.Env):
         #Adi: Adding argument/flag for using depth images
         #Adi: Adding argument for the floor obj path for more accurate depth images
         #Adi: Adding flag for domain randomization
+        #Ryan: Adding hacky flags for fixed dom rand params per episode
         if sys.platform == 'darwin':
             subprocess.call([
                 '/Applications/Blender/blender.app/Contents/MacOS/blender',
                 '--background', '--python', bfile, '--', tm_path,
                 str(self._hd), str(self._wd), str(init_side), self._init_type,
                 frame_path, self._oracle_reveal, use_depth, floor_path,
-                self.__add_dom_rand]
+                self.__add_dom_rand,
+                ",".join([str(i) for i in self.dom_rand_params['c']]),
+                ",".join([str(i) for i in self.dom_rand_params['n1']]),
+                ",".join([str(i) for i in self.dom_rand_params['camera_pos']]),
+                ",".join([str(i) for i in self.dom_rand_params['camera_deg']]),
+                str(self.dom_rand_params['specular_max'])
+                ]
             )
         else:
             subprocess.call([
                 'blender', '--background', '--python', bfile, '--', tm_path,
                 str(self._hd), str(self._wd), str(init_side), self._init_type,
                 frame_path, self._oracle_reveal, use_depth, floor_path,
-                self.__add_dom_rand]
+                self.__add_dom_rand,
+                ",".join([str(i) for i in self.dom_rand_params['c']]),
+                ",".join([str(i) for i in self.dom_rand_params['n1']]),
+                ",".join([str(i) for i in self.dom_rand_params['camera_pos']]),
+                ",".join([str(i) for i in self.dom_rand_params['camera_deg']]),
+                str(self.dom_rand_params['specular_max'])
+                ]
             )
         time.sleep(1)  # Wait a bit just in case
 
@@ -281,29 +295,23 @@ class ClothEnv(gym.Env):
         assert img.shape == (self._hd, self._wd, 3), \
                 'error, shape {}, idx {}'.format(img.shape, self._logger_idx)
 
-        print('\nUSE DEPTH {}\n'.format(use_depth))
         if use_depth == 'True':
             # Smooth the edges b/c of some triangles.
             img = cv2.bilateralFilter(img, 7, 50, 50)
             if self._add_dom_rand:
-                gval = self.np_random.uniform(low=0.3, high=0.5)
-                #img = self._adjust_gamma(img, gamma=gval) # Don't use.
-                img = np.uint8( np.maximum(0, np.double(img)-50) )
+                gval = self.dom_rand_params['gval_depth']
+                img = np.uint8( np.maximum(0, np.double(img)-gval) )
             else:
                 img = np.uint8( np.maximum(0, np.double(img)-50) )
         else:
             # Might as well randomize brightness if we're doing RGB.
             if self._add_dom_rand:
-                gval = self.np_random.uniform(low=0.8, high=1.2)
+                gval = self.dom_rand_params['gval_rgb']
                 img = self._adjust_gamma(img, gamma=gval)
 
-        # Edit: we're now doing this for RGB as well.
         if self._add_dom_rand:
             # Apply some noise ONLY AT THE END OF EVERYTHING. I think it's
-            # better to first generate a parameter, *then* do the noise.
-            #noise = self.np_random.normal(loc=0.0, scale=1.0, size=img.shape)
-            lim = self.np_random.uniform(low=-15.0, high=15.0)
-            noise = self.np_random.uniform(low=-lim, high=lim, size=img.shape)
+            noise = self.dom_rand_params['noise']
             img = np.minimum( np.maximum(np.double(img)+noise, 0), 255 )
             img = np.uint8(img)
 
@@ -311,7 +319,6 @@ class ClothEnv(gym.Env):
         # make sure it's not done before we do noise addition, etc!
         #cv2.imwrite(blender_path, img)
         #img_small = cv2.resize(img, dsize=(100,100))  # dsize=(width,height)
-
         #cv2.imwrite(tm_path.replace('.obj','_small.png'), img_small)
         # careful! only if we want to override paths!!
         #cv2.imwrite(blender_path, img_small)
@@ -775,6 +782,16 @@ class ClothEnv(gym.Env):
         self._start_variance_inv = self._compute_variance()
 
         # We shouldn't need to wrap around np.array(...) as self.state does that.
+        # Ryan: compute dom rand params once per episode
+        self.dom_rand_params['gval_depth'] = self.np_random.uniform(low=40, high=50) # really pixels ...
+        self.dom_rand_params['gval_rgb'] = self.np_random.uniform(low=0.7, high=1.3)
+        lim = self.np_random.uniform(low=-15.0, high=15.0)
+        self.dom_rand_params['noise'] = self.np_random.uniform(low=-lim, high=lim, size=(self._wd, self._hd, 3))
+        self.dom_rand_params['c'] = np.random.uniform(low=0.4, high=0.6, size=(3,))
+        self.dom_rand_params['n1'] = np.random.uniform(low=-0.35, high=0.35, size=(3,))
+        self.dom_rand_params['camera_pos'] = np.random.normal(0., scale=0.04, size=(3,)) # check get_image_rep_279.py for 'scale'
+        self.dom_rand_params['camera_deg'] = np.random.normal(0., scale=0.90, size=(3,))
+        self.dom_rand_params['specular_max'] = np.random.uniform(low=0.0, high=0.0) # check get_image_rep_279.py for 'high'
         obs = self.state
         return obs
 

@@ -86,7 +86,7 @@ def load_mesh(name):
         raise ValueError("{} not an obj file".format(name))
 
 
-def set_camera_pose(dim_height, dim_width):
+def set_camera_pose(dim_height, dim_width, camera_pos, camera_deg):
     """Set up the camera pose, potentially applying domain randomization.
 
     Defaults for the top-down view are 0.5, 0.5, and 1.5 for x, y, and z,
@@ -94,6 +94,14 @@ def set_camera_pose(dim_height, dim_width):
     I think yaw, pitch, and roll but the ordering can be determined by testing
     values, e.g.: https://github.com/BerkeleyAutomation/gym-cloth/issues/28.
     """
+    # Ryan: fixed DR
+    if ADD_DOM_RAND:
+        cp = [float(i) for i in camera_pos.split(",")]
+        cd = [float(i) for i in camera_deg.split(",")]
+    else:
+        cp = [rn(0.,scale=EPS),rn(0.,scale=EPS),rn(0.,scale=EPS)]
+        cd = [rn(0.,scale=EPS),rn(0.,scale=EPS),rn(0.,scale=EPS)]
+
     # Select the camera and make it the active object so that we can manipulate it
     bpy.data.objects['Camera'].select = True
     bpy.context.scene.objects.active = bpy.data.objects['Camera']
@@ -104,14 +112,14 @@ def set_camera_pose(dim_height, dim_width):
     bpy.context.scene.render.resolution_y = dim_height
 
     # Set the x, y and z location (Top-down view). Daniel: height was 1.5 but let's do 1.45.
-    bpy.context.object.location[0] = 0.5  + rn(0., scale=DR['_CAMERA_POS_X'])
-    bpy.context.object.location[1] = 0.5  + rn(0., scale=DR['_CAMERA_POS_Y'])
-    bpy.context.object.location[2] = 1.45 + rn(0., scale=DR['_CAMERA_POS_Z'])
+    bpy.context.object.location[0] = 0.5  + cp[0]
+    bpy.context.object.location[1] = 0.5  + cp[1]
+    bpy.context.object.location[2] = 1.45 + cp[2]
 
     # Set the x, y and z rotation (Top-down view).
-    bpy.context.object.rotation_euler[0] = DEG_TO_RAD * (0 + rn(0., scale=DR['_CAMERA_DEG_X']))
-    bpy.context.object.rotation_euler[1] = DEG_TO_RAD * (0 + rn(0., scale=DR['_CAMERA_DEG_Y']))
-    bpy.context.object.rotation_euler[2] = DEG_TO_RAD * (0 + rn(0., scale=DR['_CAMERA_DEG_Z']))
+    bpy.context.object.rotation_euler[0] = DEG_TO_RAD * (0 + cd[0])
+    bpy.context.object.rotation_euler[1] = DEG_TO_RAD * (0 + cd[1])
+    bpy.context.object.rotation_euler[2] = DEG_TO_RAD * (0 + cd[2])
 
 
 def set_floor_pose(floor_mesh_name):
@@ -148,7 +156,7 @@ def set_bed_pose(bed_mesh_name):
     bpy.context.object.rotation_euler[2] = 0
 
 
-def set_bed_color(bed_mesh_name):
+def set_bed_color(bed_mesh_name, color):
     """Set background plane color from the given mesh.
     """
     bpy.data.objects[bed_mesh_name].select = True
@@ -168,12 +176,14 @@ def set_bed_color(bed_mesh_name):
         # pink-ish colors? Is it better to keep at 0.5 and switch the lighting?
         #c = np.array([0.5, 0.5, 0.5])
         # Eh we can try this:
-        c = np.random.uniform(low=0.4, high=0.6, size=(3,))
+        # c = np.random.uniform(low=0.4, high=0.6, size=(3,))
+        # Ryan: constant DR
+        c = np.array([float(i) for i in color.split(",")])
 
     bpy.context.object.active_material.diffuse_color = (c[0], c[1], c[2])
 
 
-def set_cloth_color(mesh_name, init_type, init_side, backfacing=False):
+def set_cloth_color(mesh_name, color_noise, specular_max, init_type, init_side, backfacing=False):
     """Set the cloth color.
 
     Can set the 'specular intensity' to adjust the brightness of the
@@ -201,8 +211,7 @@ def set_cloth_color(mesh_name, init_type, init_side, backfacing=False):
 
     bpy.data.materials.new(name="cloth_material")
     bpy.context.active_object.data.materials.append(bpy.data.materials['cloth_material'])
-    bpy.data.materials["cloth_material"].specular_intensity = \
-            unif(low=0.0, high=DR['_SPECULAR_MAX'])
+    bpy.data.materials["cloth_material"].specular_intensity = float(specular_max)
 
     if backfacing:
         bpy.context.object.active_material.use_nodes = True
@@ -231,7 +240,9 @@ def set_cloth_color(mesh_name, init_type, init_side, backfacing=False):
         #b = [0.474, 0.500, 0.075, 1]
 
         # We may want the same noise applied on the front and back.
-        n1 = np.random.uniform(low=-0.35, high=0.35, size=(3,))
+        # Ryan: get fixed noise from parameter
+        n1 = np.array([float(i) for i in color_noise.split(",")])
+        #n1 = np.random.uniform(low=-0.35, high=0.35, size=(3,))
         if ADD_DOM_RAND:
             b = np.array([0.070, 0.300, 0.900]) + n1
             f = np.array([0.070, 0.050, 0.600]) + n1
@@ -409,6 +420,13 @@ def main():
     floor_obj_path = argv[8]
     use_dom_rand = argv[9]
 
+    # Ryan: Adding new flags for fixed DR params from cloth_env.py
+    color = argv[10]
+    color_noise = argv[11]
+    camera_pos = argv[12]
+    camera_deg = argv[13]
+    specular_max = argv[14]
+
     #Set domain randomization parameters if using domain randomization
     set_dom_rand(use_dom_rand)
 
@@ -430,7 +448,7 @@ def main():
 
     # Hard-coded path to `blender/frame0.obj` in the gym-cloth repo.
     bed_mesh_name = load_mesh(bed_obj_path)
-    set_bed_color(bed_mesh_name)
+    set_bed_color(bed_mesh_name, color)
     set_bed_pose(bed_mesh_name)
 
     #If using depth images, load floor mesh from `blender/floor.obj` in the gym-cloth repo.
@@ -449,10 +467,11 @@ def main():
     bpy.data.lamps["Lamp"].energy = 1.5
 
     #Set the camera pose
-    set_camera_pose(dim_height, dim_width)
+    set_camera_pose(dim_height, dim_width, camera_pos=camera_pos, camera_deg=camera_deg)
 
     #Set the cloth_color
-    set_cloth_color(mesh_name, init_side=init_side, init_type=init_type, backfacing=True)
+    set_cloth_color(mesh_name, color_noise=color_noise, specular_max=specular_max,
+                    init_side=init_side, init_type=init_type, backfacing=True)
 
     #Set the cloth texture (will do this after I finish the other ones)
     #set_cloth_texture()

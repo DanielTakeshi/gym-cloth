@@ -68,7 +68,7 @@ def analyze(data, lengths, use_img=False):
     num_transitions = 0
 
     # For average pixel values?
-    average_img = np.zeros((100,100,3))
+    average_img = np.zeros((100,100,4))
     average_nb = 0
 
     for eidx,ep in enumerate(data):
@@ -87,15 +87,20 @@ def analyze(data, lengths, use_img=False):
                 # Right now images are actually 224x224 and we forcibly resize in code,
                 # because this gives the option of using pre-trained residual networks.
                 assert img is not None
-                assert img.shape == (200,200,3) or img.shape == (224,224,3), img.shape
+                assert img.shape == (200,200,3) or img.shape == (224,224,3) \
+                        or img.shape == (224,224,4), img.shape
                 cv2.imwrite(fname, img)
 
                 # JUST IN CASE. The resized one is what the network sees.
                 x = cv2.resize(img, (100,100))
-                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}.png'.format(
+                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}_c.png'.format(
                         str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3])
                 fname = join('logs',suffix)
-                cv2.imwrite(fname, x)
+                cv2.imwrite(fname, x[:,:,:3])
+                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}_d.png'.format(
+                        str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3])
+                fname = join('logs',suffix)
+                cv2.imwrite(fname, x[:,:,3])
                 average_img += x
                 average_nb += 1
 
@@ -114,9 +119,12 @@ def analyze(data, lengths, use_img=False):
 
             # JUST IN CASE.
             x = cv2.resize(img, (100,100))
-            suffix = 'img_resized_ep_{}_t_{}_lastobs.png'.format(str(eidx).zfill(3), str(eplen).zfill(2))
+            suffix = 'img_resized_ep_{}_t_{}_lastobs_c.png'.format(str(eidx).zfill(3), str(eplen).zfill(2))
             fname = join('logs',suffix)
-            cv2.imwrite(fname, x)
+            cv2.imwrite(fname, x[:,:,:3])
+            suffix = 'img_resized_ep_{}_t_{}_lastobs_d.png'.format(str(eidx).zfill(3), str(eplen).zfill(2))
+            fname = join('logs',suffix)
+            cv2.imwrite(fname, x[:,:,3])
             average_img += x
             average_nb += 1
 
@@ -243,7 +251,10 @@ if __name__ == "__main__":
     # COLOR with correct noise randomization
     #fname = 'demos-2019-08-30-pol-oracle-seed-1337_to_1341-clip_a-True-delta_a-True-obs-blender-depthimg-False-tier1_epis_2000_COMBINED.pkl'
     #fname = 'demos-2019-08-30-pol-oracle-seed-1337_to_1341-clip_a-True-delta_a-True-obs-blender-depthimg-False-tier2_epis_2000_COMBINED.pkl'
-    fname = 'demos-2019-08-30-pol-oracle-seed-1337_to_1341-clip_a-True-delta_a-True-obs-blender-depthimg-False-tier3_epis_2000_COMBINED.pkl'
+    #fname = 'demos-2019-08-30-pol-oracle-seed-1337_to_1341-clip_a-True-delta_a-True-obs-blender-depthimg-False-tier3_epis_2000_COMBINED.pkl'
+
+    # Now for Feb 2020+.
+    fname = 'demos-2020-02-09-15-59-pol-oracle-seed-1337-obs-blender-depth-False-rgbd-True-tier2_epis_5.pkl'
 
     # ADJUST!!!! For example, if using wrinkles based policy.
     USE_IMG = True
