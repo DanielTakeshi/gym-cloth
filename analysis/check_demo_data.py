@@ -253,8 +253,10 @@ if __name__ == "__main__":
     #fname = 'demos-2019-08-30-pol-oracle-seed-1337_to_1341-clip_a-True-delta_a-True-obs-blender-depthimg-False-tier2_epis_2000_COMBINED.pkl'
     #fname = 'demos-2019-08-30-pol-oracle-seed-1337_to_1341-clip_a-True-delta_a-True-obs-blender-depthimg-False-tier3_epis_2000_COMBINED.pkl'
 
-    # Now for Feb 2020+.
-    fname = 'demos-2020-02-09-15-59-pol-oracle-seed-1337-obs-blender-depth-False-rgbd-True-tier2_epis_5.pkl'
+    # Now for Feb 2020+, RGBD.
+    #fname = 'demos-2020-02-09-16-31-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier1_epis_2000_COMBO.pkl'
+    #fname = 'demos-2020-02-10-15-02-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier2_epis_2000_COMBO.pkl'
+    fname = 'demos-2020-02-10-15-05-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier3_epis_2000_COMBO.pkl'
 
     # ADJUST!!!! For example, if using wrinkles based policy.
     USE_IMG = True
