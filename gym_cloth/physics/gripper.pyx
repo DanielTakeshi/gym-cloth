@@ -19,8 +19,9 @@ class Gripper(object):
         self.grabbed_pts = []
         self.height = height
         self.thickness = thickness
+        self.pinned_pts = [] # for bilateral actions
 
-    def grab_top(self, double x, double y):
+    def grab_top(self, double x, double y, bilateral=False):
         """
         Grab the highest points in the cylinder with center (x,y)
         and radius grip_radius.
@@ -39,7 +40,10 @@ class Gripper(object):
             if pts:
                 break
             curZ -= self.thickness
-        self.grabbed_pts.extend(pts)
+        if bilateral:
+            self.pinned_pts.extend(pts)
+        else:
+            self.grabbed_pts.extend(pts)
 
     def grab(self, double x, double y):
         """Grab points at (x,y).
@@ -65,9 +69,14 @@ class Gripper(object):
             pt.y = y + pt.y
             pt.z = z + pt.z
 
-    def release(self):
+    def release(self, bilateral=False):
         """Release gripper, clearing its `grabbed_pts` list.
         """
-        for pt in self.grabbed_pts:
-            pt.pinned = False
-        self.grabbed_pts = []
+        if bilateral:
+            for pt in self.pinned_pts:
+                pt.pinned = False
+            self.pinned_pts = []
+        else:
+            for pt in self.grabbed_pts:
+                pt.pinned = False
+            self.grabbed_pts = []

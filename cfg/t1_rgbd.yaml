@@ -20,7 +20,7 @@ cloth:
     pin_cond: 'y=0'         # Determines which points are pinned. See `cloth.pyx`.
     color_pts: 'diag1'      # Determines which points are colored. See `cloth.pyx`.
     plane_friction: 1.0     # Corresopnds to 184's 'friction' in the 'plane' struct. Assume plane has normal=(0,0,1).
-    tear_thresh: 2.0        # Tear thresh. I've found 2 to 3 works well. Set to >100 to basically ignore this feature.
+    tear_thresh: 3.0        # Tear thresh. I've found 2 to 3 works well. Set to >100 to basically ignore this feature.
 
 frames_per_sec: 30          # In theory, but in practice we really render more often
 simulation_steps: 30        # Actually an important hyperparameter to match with 184-based code.
@@ -44,7 +44,8 @@ env:
     force_grab: False       # Should ONLY be true for evaluation, never for training.
     clip_act_space: True    # Whether we assume our actions should be in [-1,1], might make it easier for RL
     delta_actions: True     # If True, our action for length/angle are deltas in x and y space.
-    obs_type: 'blender'     # '1d' or 'blender'
+    bilateral_actions: True # If we do bilateral pin+pull 4D actions.
+    obs_type: '1d'     # '1d' or 'blender'
     oracle_reveal: 'False'  # If 'True', we compute the occlusion vector every time Blender is called (should only be True if using corner revealing demonstrator)
     use_depth: 'False'      # If 'True', we use depth images for the training process instead of color images
     use_dom_rand: 'True'    # If 'True', we use domain randomization (camera pose, color, etc.)
@@ -61,7 +62,7 @@ env:
 init:
     type: 'tier1'               # Options: tier1, tier2, tier3
     debug_matplotlib: False     # If we show matplotlib video of the initialization
-    render_opengl: False        # If we show opengl rendering
+    render_opengl: True        # If we show opengl rendering
 
 # ------------------------------------------------------------------------------
 # Logging. We add the date before the last `.log` in the file name.

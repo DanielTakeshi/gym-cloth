@@ -102,6 +102,7 @@ class ClothEnv(gym.Env):
         self._init_type       = cfg['init']['type']
         self._clip_act_space  = cfg['env']['clip_act_space']
         self._delta_actions   = cfg['env']['delta_actions']
+        self._bilateral       = cfg['env']['bilateral_actions']
         self._obs_type        = cfg['env']['obs_type']
         self._force_grab      = cfg['env']['force_grab']
         self._oracle_reveal   = cfg['env']['oracle_reveal']
@@ -161,6 +162,8 @@ class ClothEnv(gym.Env):
         # Ideally want the gripper to grip points in (0,1) for x and y. Perhaps
         # consider slack that we use for out of bounds detection? Subtle issue.
         b0, b1 = self.bounds[0], self.bounds[1]
+        if self._bilateral:
+            assert self._clip_act_space # only compatible with clip_act_space for now
         if self._clip_act_space:
             # Applies regardless of 'delta actions' vs non deltas.  Note misleading
             # 'clip' name, because (0,1) x/y-coords are *expanded* to (-1,1).
@@ -363,8 +366,10 @@ class ClothEnv(gym.Env):
             self.gripper.adjust(x=x_diag_r, y=y_diag_r, z=0.0)
         elif i < self.iters_up + self.iters_up_rest + iters_pull + self.iters_grip_rest:
             pass
-        else:
+        elif i < self.iters_up + self.iters_up_rest + iters_pull + self.iters_grip_rest + self.iters_rest - 5:
             self.gripper.release()
+        else: # release bilateral, if applicable
+            self.gripper.release(bilateral=True)
 
     def step(self, action, initialize=False):
         """Execute one action.
@@ -401,7 +406,33 @@ class ClothEnv(gym.Env):
         # Truncate actions according to our bounds, then grip.
         low  = self.action_space.low
         high = self.action_space.high
-        if self._delta_actions:
+        if self._bilateral:
+            # bilateral actions are (pick_x, pick_y, pin_x, pin_y)!
+            x_coord, y_coord, x_pin, y_pin = action
+            # assume clip act space
+            x_coord = (x_coord / 2.0) + 0.5
+            y_coord = (y_coord / 2.0) + 0.5
+            x_pin = (x_pin / 2.0) + 0.5
+            y_pin = (y_pin / 2.0) + 0.5
+            # dx/dy: direction is [x2-x1, y2-y1]; magnitude is the distance to the nearest edge
+            dx = x_coord - x_pin
+            if dx > 0:
+                dx_ = 1 - x_coord
+            else:
+                dx_ = -x_coord
+            x_factor = dx_ / dx
+            dy = y_coord - y_pin
+            if dy > 0:
+                dy_ = 1 - y_coord
+            else:
+                dy_ = -y_coord
+            y_factor = dy_ / dy
+            factor = min(x_factor, y_factor)
+            delta_x, delta_y = dx * factor, dy * factor
+            delta_x = max(min(delta_x, high[2]), low[2])
+            delta_y = max(min(delta_y, high[3]), low[3])
+            self.gripper.grab_top(x_pin, y_pin, bilateral=True) # do we want to only grab the top layer?
+        elif self._delta_actions:
             x_coord, y_coord, delta_x, delta_y = action
             x_coord = max(min(x_coord, high[0]), low[0])
             y_coord = max(min(y_coord, high[1]), low[1])
@@ -414,7 +445,7 @@ class ClothEnv(gym.Env):
             length  = max(min(length,  high[2]), low[2])
             r_trunc = max(min(radians, high[3]), low[3])
 
-        if self._clip_act_space:
+        if (not self._bilateral) and self._clip_act_space:
             # If we're here, then all four of these are in the range [-1,1].
             # Due to noise it might originally be out of range, but we truncated.
             x_coord = (x_coord / 2.0) + 0.5
@@ -427,9 +458,8 @@ class ClothEnv(gym.Env):
         # After this, we assume ranges {[0,1], [0,1],  [0,1], [-pi,pi]}.
         # Or if delta actions,         {[0,1], [0,1], [-1,1],   [-1,1]}.
         # Actually for non deltas, we have slack applied ...
-
         self.gripper.grab_top(x_coord, y_coord)
-
+        
         # Hacky solution to make us forcibly grip.
         if self._force_grab == True:
             logger.debug('Inside force_grab, make sure we are EVALUATING!')
@@ -479,6 +509,10 @@ class ClothEnv(gym.Env):
         else:
             logger.info("         ======== EXECUTING ACTION: {} ========".format(astr))
         logger.debug("Gripped at ({:.2f}, {:.2f})".format(x_coord, y_coord))
+        if self._bilateral:
+            logger.debug("Pinned at ({:.2f}, {:.2f})".format(x_pin, y_pin))
+            logger.debug("dx {:.2f}, dy {:.2f}".format(delta_x, delta_y))
+            logger.debug("Pinned points: {}".format(self.gripper.pinned_pts))
         logger.debug("Grabbed points: {}".format(self.gripper.grabbed_pts))
         logger.debug("Total grabbed: {}".format(len(self.gripper.grabbed_pts)))
         logger.debug("Action maps to {:.3f}, {:.3f}".format(x_dir, y_dir))
@@ -487,12 +521,14 @@ class ClothEnv(gym.Env):
             self.iters_up, self.iters_up_rest, iters_pull, self.iters_grip_rest, self.iters_rest))
 
         # Add special (but potentially common) case, if our gripper grips nothing.
-        if len(self.gripper.grabbed_pts) == 0:
+        if len(self.gripper.grabbed_pts) == 0 or (self._bilateral and len(self.gripper.pinned_pts) == 0):
             logger.info("No points gripped! Exiting action ...")
             exit_early = True
             iterations = 0
 
         i = 0
+        if self._bilateral:
+            time.sleep(10)
         while i < iterations:
             self._pull(i, iters_pull, x_dir_r, y_dir_r)
             self.cloth.update()
@@ -786,7 +822,7 @@ class ClothEnv(gym.Env):
         self.dom_rand_params['gval_depth'] = self.np_random.uniform(low=40, high=50) # really pixels ...
         self.dom_rand_params['gval_rgb'] = self.np_random.uniform(low=0.7, high=1.3)
         lim = self.np_random.uniform(low=-15.0, high=15.0)
-        self.dom_rand_params['noise'] = self.np_random.uniform(low=-lim, high=lim, size=(self._wd, self._hd, 3))
+        #self.dom_rand_params['noise'] = self.np_random.uniform(low=-lim, high=lim, size=(self._wd, self._hd, 3))
         self.dom_rand_params['c'] = np.random.uniform(low=0.4, high=0.6, size=(3,))
         self.dom_rand_params['n1'] = np.random.uniform(low=-0.35, high=0.35, size=(3,))
         self.dom_rand_params['camera_pos'] = np.random.normal(0., scale=0.04, size=(3,)) # check get_image_rep_279.py for 'scale'
@@ -821,6 +857,8 @@ class ClothEnv(gym.Env):
         logger = self.logger
         cfg = self.cfg
         init_side = 1 if self.cloth.init_side else -1
+        old_bilateral = self._bilateral 
+        self._bilateral = False # we do not want bilateral actions during reset()
 
         def _randval_minabs(low, high, minabs=None):
             # Helper to handle ranges with minabs requirements.
@@ -985,6 +1023,7 @@ class ClothEnv(gym.Env):
 
         logger.debug("STARTING COVERAGE: {:.2f}".format(self._compute_coverage()))
         logger.debug("STARTING VARIANCE: {:.2f}".format(self._compute_variance()))
+        self._bilateral = old_bilateral
 
     def get_random_action(self, atype='over_xy_plane'):
         """Retrieves random action.
