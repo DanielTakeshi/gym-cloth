@@ -457,10 +457,43 @@ d_wrinkle_t3 = ([
     'demos-2019-09-03-pol-wrinkle-seed-1000_to_1004-clip_a-True-delta_a-True-obs-1d-img-False-tier3_epis_2000_COMBINED.pkl',
 )
 
+# ------------------------------------------------------------------------------------------------ #
+# RGBD
+# ------------------------------------------------------------------------------------------------ #
+
+d_rgbd_t1 = ([
+    'demos-2020-02-09-16-31-pol-oracle-seed-1336-obs-blender-depth-False-rgbd-True-tier1_epis_400.pkl',
+    'demos-2020-02-09-16-31-pol-oracle-seed-1337-obs-blender-depth-False-rgbd-True-tier1_epis_400.pkl',
+    'demos-2020-02-09-16-31-pol-oracle-seed-1338-obs-blender-depth-False-rgbd-True-tier1_epis_400.pkl',
+    'demos-2020-02-09-16-31-pol-oracle-seed-1339-obs-blender-depth-False-rgbd-True-tier1_epis_400.pkl',
+    'demos-2020-02-09-16-31-pol-oracle-seed-1340-obs-blender-depth-False-rgbd-True-tier1_epis_400.pkl',
+    ],
+    'demos-2020-02-09-16-31-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier1_epis_2000_COMBO.pkl'
+)
+
+d_rgbd_t2 = ([
+    'demos-2020-02-10-15-00-pol-oracle-seed-1336-obs-blender-depth-False-rgbd-True-tier2_epis_400.pkl',
+    'demos-2020-02-10-15-01-pol-oracle-seed-1337-obs-blender-depth-False-rgbd-True-tier2_epis_400.pkl',
+    'demos-2020-02-10-15-01-pol-oracle-seed-1338-obs-blender-depth-False-rgbd-True-tier2_epis_400.pkl',
+    'demos-2020-02-10-15-02-pol-oracle-seed-1339-obs-blender-depth-False-rgbd-True-tier2_epis_400.pkl',
+    'demos-2020-02-10-15-02-pol-oracle-seed-1340-obs-blender-depth-False-rgbd-True-tier2_epis_400.pkl',
+    ],
+    'demos-2020-02-10-15-02-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier2_epis_2000_COMBO.pkl'
+)
+
+d_rgbd_t3 = ([
+    'demos-2020-02-10-15-04-pol-oracle-seed-1336-obs-blender-depth-False-rgbd-True-tier3_epis_400.pkl',
+    'demos-2020-02-10-15-04-pol-oracle-seed-1337-obs-blender-depth-False-rgbd-True-tier3_epis_400.pkl',
+    'demos-2020-02-10-15-04-pol-oracle-seed-1338-obs-blender-depth-False-rgbd-True-tier3_epis_400.pkl',
+    'demos-2020-02-10-15-04-pol-oracle-seed-1339-obs-blender-depth-False-rgbd-True-tier3_epis_400.pkl',
+    'demos-2020-02-10-15-05-pol-oracle-seed-1340-obs-blender-depth-False-rgbd-True-tier3_epis_400.pkl',
+    ],
+    'demos-2020-02-10-15-05-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier3_epis_2000_COMBO.pkl'
+)
 
 
 # ------------------------------------ ADJUST ------------------------------------ #
-dataset = d_wrinkle_t3
+dataset = d_rgbd_t3
 # ------------------------------------ ADJUST ------------------------------------ #
 
 
