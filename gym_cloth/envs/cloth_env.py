@@ -527,8 +527,8 @@ class ClothEnv(gym.Env):
             iterations = 0
 
         i = 0
-        if self._bilateral:
-            time.sleep(10)
+        # if self._bilateral:
+        #     time.sleep(10)
         while i < iterations:
             self._pull(i, iters_pull, x_dir_r, y_dir_r)
             self.cloth.update()
