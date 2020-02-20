@@ -20,7 +20,7 @@ from collections import defaultdict
 np.set_printoptions(edgeitems=10, linewidth=180, suppress=True)
 
 #Adi: Now adding the 'oracle_reveal' demonstrator policy which in reveals occluded corners.
-POLICIES = ['oracle','harris','wrinkle','highest','random', 'oracle_reveal']
+POLICIES = ['oracle','harris','wrinkle','highest','random', 'oracle_reveal','oracle_bilateral']
 RAD_TO_DEG = 180. / np.pi
 DEG_TO_RAD = np.pi / 180.
 BLUE  = (255,0,0)
@@ -356,6 +356,86 @@ class OracleCornerRevealPolicy(Policy):
             action = (x, y, dx * self._sign, dy * self._sign)
         return action
 
+# Ryan: adding oracle policy for bilateral actions
+class OracleBilateralPolicy(Policy):
+    def __init__(self):
+        super().__init__()
+        self._method = 'distance'
+
+    def get_action(self, obs, t):
+        """Leverages ground truth state. Algorithm:
+        1. As in the regular oracle policy, choose farthest corner as pick point
+        2. Pin the part of the fabric farthest in the direction opposite the oracle pull,
+        roughly in the opposite corner"""
+        pick_x, pick_y, dx, dy = self._corners_delta(t) # same pick_x / pick_y
+        if self.cfg['env']['clip_act_space']:
+            x = (pick_x / 2.0) + 0.5
+            y = (pick_y / 2.0) + 0.5
+        else:
+            x, y = pick_x, pick_y
+        far_x, far_y = x - dx * 100, y - dy * 100 # pick an absurdly far point in the right direction
+        # find the nearest point
+        closest = min(self.env.cloth.pts, key=lambda pt: np.linalg.norm(np.array([far_x, far_y]) - np.array([pt.x, pt.y])))
+        pin_x, pin_y = closest.x, closest.y
+        if self.cfg['env']['clip_act_space']:
+            pin_x = (pin_x - 0.5) * 2.
+            pin_y = (pin_y - 0.5) * 2.
+        return pick_x, pick_y, pin_x, pin_y
+
+    def _corners_delta(self, t):
+        """Corner-based policy, assuming delta actions.
+        """
+        pts = self.env.cloth.pts
+        assert len(pts) == 625, len(pts)
+        cloth = self.env.cloth
+        if self.cfg['init']['type'] == 'tier2' and (not cloth.init_side):
+            self._ll = 576  # actual corner: 600
+            self._ul = 598  # actual corner: 624
+            self._lr = 26   # actual corner: 0
+            self._ur = 48   # actual corner: 24
+            print('NOTE! Flip the corner indices due to init side, tier 2')
+            print(self._ll, self._ul, self._lr, self._ur)
+        else:
+            self._ll = 26   # actual corner: 0
+            self._ul = 48   # actual corner: 24
+            self._lr = 576  # actual corner: 600
+            self._ur = 598  # actual corner: 624
+            print('Corners are at the usual indices.')
+            print(self._ll, self._ul, self._lr, self._ur)
+        x0, y0, cx0, cy0, dx0, dy0, dist0 = self._data_delta(pts[self._ur], targx=1, targy=1)
+        x1, y1, cx1, cy1, dx1, dy1, dist1 = self._data_delta(pts[self._lr], targx=1, targy=0)
+        x2, y2, cx2, cy2, dx2, dy2, dist2 = self._data_delta(pts[self._ll], targx=0, targy=0)
+        x3, y3, cx3, cy3, dx3, dy3, dist3 = self._data_delta(pts[self._ul], targx=0, targy=1)
+        maxdist = max([dist0, dist1, dist2, dist3])
+
+        if self._method == 'rotation':
+            # Rotate through the corners.
+            if t % 4 == 0:
+                x, y, cx, cy, dx, dy = x0, y0, cx0, cy0, dx0, dy0
+            elif t % 4 == 1:
+                x, y, cx, cy, dx, dy = x1, y1, cx1, cy1, dx1, dy1
+            elif t % 4 == 2:
+                x, y, cx, cy, dx, dy = x2, y2, cx2, cy2, dx2, dy2
+            elif t % 4 == 3:
+                x, y, cx, cy, dx, dy = x3, y3, cx3, cy3, dx3, dy3
+        elif self._method == 'distance':
+            # Pick cloth corner furthest from the target.
+            if dist0 == maxdist:
+                x, y, cx, cy, dx, dy = x0, y0, cx0, cy0, dx0, dy0
+            elif dist1 == maxdist:
+                x, y, cx, cy, dx, dy = x1, y1, cx1, cy1, dx1, dy1
+            elif dist2 == maxdist:
+                x, y, cx, cy, dx, dy = x2, y2, cx2, cy2, dx2, dy2
+            elif dist3 == maxdist:
+                x, y, cx, cy, dx, dy = x3, y3, cx3, cy3, dx3, dy3
+        else:
+            raise ValueError(self._method)
+
+        if self.cfg['env']['clip_act_space']:
+            action = (cx, cy, dx, dy)
+        else:
+            action = (x, y, dx, dy)
+        return action
 
 class HarrisCornerPolicy(Policy):
     """Note: strongly recommended we don't do this. It will fail miserably.
@@ -768,6 +848,8 @@ if __name__ == "__main__":
         policy = RandomPolicy()
     elif args.policy == 'oracle_reveal':
         policy = OracleCornerRevealPolicy()
+    elif args.policy == 'oracle_bilateral':
+        policy = OracleBilateralPolicy()
     else:
         raise ValueError(args.policy)
 

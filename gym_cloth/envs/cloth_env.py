@@ -523,6 +523,8 @@ class ClothEnv(gym.Env):
         # Add special (but potentially common) case, if our gripper grips nothing.
         if len(self.gripper.grabbed_pts) == 0 or (self._bilateral and len(self.gripper.pinned_pts) == 0):
             logger.info("No points gripped! Exiting action ...")
+            self.gripper.release()
+            self.gripper.release(bilateral=True)
             exit_early = True
             iterations = 0
 
@@ -545,9 +547,15 @@ class ClothEnv(gym.Env):
 
             # If we get any tears (pull in a bad direction, etc.), exit.
             if self.cloth.have_tear:
-                logger.debug("TEAR, exiting...")
-                self.have_tear = True
-                break
+                if self._bilateral:
+                    # Stop a bilateral action at the tear threshold but do not terminate episode
+                    logger.debug("Tear threshold met, dropping cloth...")
+                    self.gripper.release()
+                    self.cloth.cloth_have_tear = False
+                else:
+                    logger.debug("TEAR, exiting...")
+                    self.have_tear = True
+                    break
             i += 1
 
         if initialize:
