@@ -409,6 +409,10 @@ class ClothEnv(gym.Env):
         if self._bilateral:
             # bilateral actions are (pick_x, pick_y, pin_x, pin_y)!
             x_coord, y_coord, x_pin, y_pin = action
+            x_coord = max(min(x_coord, high[0]), low[0])
+            y_coord = max(min(y_coord, high[1]), low[1])
+            x_pin = max(min(x_pin, high[0]), low[0])
+            y_pin = max(min(y_pin, high[1]), low[1])
             # assume clip act space
             x_coord = (x_coord / 2.0) + 0.5
             y_coord = (y_coord / 2.0) + 0.5
@@ -417,16 +421,16 @@ class ClothEnv(gym.Env):
             # dx/dy: direction is [x2-x1, y2-y1]; magnitude is the distance to the nearest edge
             dx = x_coord - x_pin
             if dx > 0:
-                dx_ = 1 - x_coord
+                dx_ = 1 + self._slack/4 - x_coord
             else:
-                dx_ = -x_coord
-            x_factor = dx_ / dx
+                dx_ = -(x_coord + self._slack/4)
+            x_factor = dx_ / (dx + 0.001)
             dy = y_coord - y_pin
             if dy > 0:
-                dy_ = 1 - y_coord
+                dy_ = 1 + self._slack/4 - y_coord
             else:
-                dy_ = -y_coord
-            y_factor = dy_ / dy
+                dy_ = -(y_coord + self._slack/4)
+            y_factor = dy_ / (dy + 0.001)
             factor = min(x_factor, y_factor)
             delta_x, delta_y = dx * factor, dy * factor
             delta_x = max(min(delta_x, high[2]), low[2])
