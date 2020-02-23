@@ -168,6 +168,8 @@ def set_bed_color(bed_mesh_name, color):
 
     # Daniel: earlier we had this:
     c = np.array([255.0, 255.0, 255.0])
+    # Daniel: https://github.com/BerkeleyAutomation/gym-cloth/issues/37
+    c = np.array([1.0, 1.0, 1.0])
 
     if ADD_DOM_RAND:
         # Daniel: but I feel like this is slight better. Using [0,0,0] means it's
