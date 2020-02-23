@@ -72,6 +72,17 @@ def analyze(data, lengths, use_img=False):
     average_nb = 0
 
     for eidx,ep in enumerate(data):
+        # We can use this to get coverage per-time step
+        # Hacky but we do what we have to do ... assumes we know a specified index.
+        # I use this for generating examples of oracle corner pulling policy.
+        if eidx == 4:
+            print('\nat our desired index, here is the e info, for the last time stpe:')
+            _einfo = ep['info']
+            #print(_einfo)
+            for item in _einfo:
+                print(item)
+            print()
+
         eplen = len(ep['rew'])
         num_transitions += len(ep['rew'])
         for t in range(eplen):
@@ -79,6 +90,7 @@ def analyze(data, lengths, use_img=False):
             act = ep['act'][t]
             rew = ep['rew'][t]
             fin = ep['done'][t]
+            # Ah, can use this for actual coverage.
             suffix = 'img_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}.png'.format(
                     str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3])
             fname = join('logs',suffix)
@@ -92,13 +104,14 @@ def analyze(data, lengths, use_img=False):
                 cv2.imwrite(fname, img)
 
                 # JUST IN CASE. The resized one is what the network sees.
+                coverage = 100.0
                 x = cv2.resize(img, (100,100))
-                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}_c.png'.format(
-                        str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3])
+                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}_c_cov{:.1f}.png'.format(
+                        str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3], coverage)
                 fname = join('logs',suffix)
                 cv2.imwrite(fname, x[:,:,:3])
-                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}_d.png'.format(
-                        str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3])
+                suffix = 'img_resized_ep_{}_t_{}_rew_{:.1f}_act_{:.2f}_{:.2f}_{:.2f}_{:.2f}_d_cov{:.1f}.png'.format(
+                        str(eidx).zfill(3), str(t).zfill(2), rew, act[0], act[1], act[2], act[3], coverage)
                 fname = join('logs',suffix)
                 cv2.imwrite(fname, x[:,:,3])
                 average_img += x
@@ -119,10 +132,12 @@ def analyze(data, lengths, use_img=False):
 
             # JUST IN CASE.
             x = cv2.resize(img, (100,100))
-            suffix = 'img_resized_ep_{}_t_{}_lastobs_c.png'.format(str(eidx).zfill(3), str(eplen).zfill(2))
+            suffix = 'img_resized_ep_{}_t_{}_lastobs_c.png'.format(
+                    str(eidx).zfill(3), str(eplen).zfill(2))
             fname = join('logs',suffix)
             cv2.imwrite(fname, x[:,:,:3])
-            suffix = 'img_resized_ep_{}_t_{}_lastobs_d.png'.format(str(eidx).zfill(3), str(eplen).zfill(2))
+            suffix = 'img_resized_ep_{}_t_{}_lastobs_d.png'.format(
+                    str(eidx).zfill(3), str(eplen).zfill(2))
             fname = join('logs',suffix)
             cv2.imwrite(fname, x[:,:,3])
             average_img += x
@@ -256,9 +271,10 @@ if __name__ == "__main__":
     # Now for Feb 2020+, RGBD.
     #fname = 'demos-2020-02-09-16-31-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier1_epis_2000_COMBO.pkl'
     #fname = 'demos-2020-02-10-15-02-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier2_epis_2000_COMBO.pkl'
-    fname = 'demos-2020-02-10-15-05-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier3_epis_2000_COMBO.pkl'
+    #fname = 'demos-2020-02-10-15-05-pol-oracle-seed-1336_to_1340-obs-blender-depth-False-rgbd-True-tier3_epis_2000_COMBO.pkl'
 
     # ADJUST!!!! For example, if using wrinkles based policy.
+    fname = 'demos-2020-02-23-13-53-pol-oracle-seed-1337-obs-blender-depth-False-rgbd-True-tier3_epis_10.pkl'
     USE_IMG = True
 
     fname = join('logs', fname)
