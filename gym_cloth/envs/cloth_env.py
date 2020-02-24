@@ -411,8 +411,9 @@ class ClothEnv(gym.Env):
             x_coord, y_coord, x_pin, y_pin = action
             x_coord = max(min(x_coord, high[0]), low[0])
             y_coord = max(min(y_coord, high[1]), low[1])
-            x_pin = max(min(x_pin, high[0]), low[0])
-            y_pin = max(min(y_pin, high[1]), low[1])
+            # if pin point is OOB, don't pin (don't constrain x_pin/y_pin)
+            #x_pin = max(min(x_pin, high[0]), low[0])
+            #y_pin = max(min(y_pin, high[1]), low[1])
             # assume clip act space
             x_coord = (x_coord / 2.0) + 0.5
             y_coord = (y_coord / 2.0) + 0.5
@@ -421,17 +422,30 @@ class ClothEnv(gym.Env):
             # dx/dy: direction is [x2-x1, y2-y1]; magnitude is the distance to the nearest edge
             dx = x_coord - x_pin
             if dx > 0:
-                dx_ = 1 + self._slack/4 - x_coord
+                #dx_ = 1 + self._slack/4 - x_coord
+                dx_ = 1 - x_coord
             else:
-                dx_ = -(x_coord + self._slack/4)
-            x_factor = dx_ / (dx + 0.001)
+                #dx_ = -(x_coord + self._slack/4)
+                dx_ = -x_coord
+            if dx != 0:
+                x_factor = dx_ / dx
             dy = y_coord - y_pin
             if dy > 0:
-                dy_ = 1 + self._slack/4 - y_coord
+                #dy_ = 1 + self._slack/4 - y_coord
+                dy_ = 1 - y_coord
             else:
-                dy_ = -(y_coord + self._slack/4)
-            y_factor = dy_ / (dy + 0.001)
-            factor = min(x_factor, y_factor)
+                #dy_ = -(y_coord + self._slack/4)
+                dy_ = -y_coord
+            if dy != 0:
+                y_factor = dy_ / dy
+            if dx == 0 and dy == 0:
+                factor = 0
+            elif dx == 0:
+                factor = y_factor
+            elif dy == 0:
+                factor = x_factor
+            else:
+                factor = min(x_factor, y_factor)
             delta_x, delta_y = dx * factor, dy * factor
             delta_x = max(min(delta_x, high[2]), low[2])
             delta_y = max(min(delta_y, high[3]), low[3])
@@ -525,7 +539,8 @@ class ClothEnv(gym.Env):
             self.iters_up, self.iters_up_rest, iters_pull, self.iters_grip_rest, self.iters_rest))
 
         # Add special (but potentially common) case, if our gripper grips nothing.
-        if len(self.gripper.grabbed_pts) == 0 or (self._bilateral and len(self.gripper.pinned_pts) == 0):
+        #if len(self.gripper.grabbed_pts) == 0 or (self._bilateral and len(self.gripper.pinned_pts) == 0):
+        if len(self.gripper.grabbed_pts) == 0:
             logger.info("No points gripped! Exiting action ...")
             self.gripper.release()
             self.gripper.release(bilateral=True)

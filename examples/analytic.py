@@ -368,15 +368,24 @@ class OracleBilateralPolicy(Policy):
         2. Pin the part of the fabric farthest in the direction opposite the oracle pull,
         roughly in the opposite corner"""
         pick_x, pick_y, dx, dy = self._corners_delta(t) # same pick_x / pick_y
+        print(pick_x, pick_y, dx, dy)
         if self.cfg['env']['clip_act_space']:
             x = (pick_x / 2.0) + 0.5
             y = (pick_y / 2.0) + 0.5
         else:
             x, y = pick_x, pick_y
-        far_x, far_y = x - dx * 100, y - dy * 100 # pick an absurdly far point in the right direction
-        # find the nearest point
-        closest = min(self.env.cloth.pts, key=lambda pt: np.linalg.norm(np.array([far_x, far_y]) - np.array([pt.x, pt.y])))
-        pin_x, pin_y = closest.x, closest.y
+        # v0: pick nearest point far away
+        # far_x, far_y = x - dx * 100, y - dy * 100 # pick an absurdly far point in the right direction
+        # # find the nearest point
+        # closest = min(self.env.cloth.pts, key=lambda pt: np.linalg.norm(np.array([far_x, far_y]) - np.array([pt.x, pt.y])))
+        # pin_x, pin_y = closest.x, closest.y
+        # v1: pick a point a fixed delta away on the correct vector, even if not on cloth
+        dir_ = np.array([dx, dy])
+        dir_ /= np.linalg.norm(dir_)
+        SCALE = 0.8
+        vec_ = dir_ * SCALE
+        pin_x = x - vec_[0]
+        pin_y = y - vec_[1]
         if self.cfg['env']['clip_act_space']:
             pin_x = (pin_x - 0.5) * 2.
             pin_y = (pin_y - 0.5) * 2.
