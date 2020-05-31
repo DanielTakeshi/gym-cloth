@@ -1,5 +1,18 @@
 # Gym Cloth
 
+This is one of the code bases used in our paper "Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor" with [arXiv here][3] and [project website here][4]. If you find the code or other related resources useful, please consider citing the paper:
+
+```
+@inproceedings{seita_fabrics_2020,
+    author = {Daniel Seita and Aditya Ganapathi and Ryan Hoque and Minho Hwang and Edward Cen and Ajay Kumar Tanwani and Ashwin Balakrishna and Brijen Thananjeyan and Jeffrey Ichnowski and Nawid Jamali and Katsu Yamane and Soshi Iba and John Canny and Ken Goldberg},
+    title = {{Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor}},
+    booktitle = {arXiv:1910.04854},
+    Year = {2019}
+}
+```
+
+<hr>
+
 This creates a gym environment based on our cloth simulator. The path directory
 is structured following [standard gym conventions][1], and we also include our
 `.pyx` files here for Cython compilation.
@@ -114,3 +127,5 @@ Notes:
 
 [1]:https://github.com/openai/gym/tree/master/gym/envs
 [2]:https://github.com/openai/gym/pull/1314
+[3]:https://arxiv.org/abs/1910.04854
+[4]:https://sites.google.com/view/fabric-smoothing
