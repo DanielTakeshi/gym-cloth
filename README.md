@@ -1,8 +1,6 @@
 # Gym Cloth
 
-This is one of the code bases used in our paper "Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor" with [arXiv here][3] and [project website here][4]. The arXiv version will have the most up-to-date version of the paper.
-
-If you find the code or other related resources useful, please consider citing the paper:
+Quick logistics overview: this is *one* of the code bases used in our paper "Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor" with [arXiv here][3] and [project website here][4]. The arXiv version will have the most up-to-date version of the paper. If you find the code or other related resources useful, please consider citing the paper:
 
 ```
 @inproceedings{seita_fabrics_2020,
