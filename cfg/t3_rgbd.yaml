@@ -41,7 +41,7 @@ env:
     reduce_factor: 0.0020   # Multiply raw directions by this to make actions smaller
     grip_radius: 0.003      # alternative: .003, larger radius means we grab more points
     reward_type: 'coverage-delta' # See `ClothEnv` for possible types.
-    force_grab: True        # Should ONLY be true for evaluation, never for training.
+    force_grab: False       # Should ONLY be true for evaluation, never for training.
     clip_act_space: True    # Whether we assume our actions should be in [-1,1], might make it easier for RL
     delta_actions: True     # If True, our action for length/angle are deltas in x and y space.
     obs_type: 'blender'     # '1d' or 'blender'

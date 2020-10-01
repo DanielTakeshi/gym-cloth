@@ -34,30 +34,26 @@ using Python 3. We have not done any serious Python 2 testing since the Jurassic
 
 ## Installation and Code Usage
 
-1. Make a new virtualenv. For example, if you're using Python 2 and you put
-your environments in a directory `~/Envs`:
+1. Make a new virtualenv or conda env. For example, if you're using conda envs,
+   run this to make and then activate the environment:
 
    ```
-   virtualenv --python=python2 ~/Envs/py2-clothsim
+   conda create -n py3-cloth python=3.6
+   conda activate py3-cloth
    ```
 
-   If you're not working with the physical robots, don't use the
-   `--system-site-packages` option yet. We have ROS installed on our machines,
-   and I think if we use the physical robots, we want that option.
-
-2. Run `pip install -r requirements.txt`. This should work regardless of
-whether you're using Python 2 or Python 3.
+2. Run `pip install -r requirements.txt` to install dependencies.
 
 3. Run `python setup.py install`. This should automatically "cythonize" the
-Python `.pyx` files. An alternative is to do `python setup.py develop` in
-development mode. This has the advantage in that code changes in
-package-dependent files will automatically be updated when you run code, and
-you avoid having to "re-install" the package. However, since we use Cython code
-in files that end with `.pyx`, those have to be re-compiled each time we run
-the code. Thus, they automatically require another `python setup.py` call
-anyway, so it seems like the distinction between install mode and develop mode
-doesn't matter here. For example, if we want to run a fictitious `demo.py`
-script, we can do this to test:
+   Python `.pyx` files. An alternative is to do `python setup.py develop` in
+   development mode. This has the advantage in that code changes in
+   package-dependent files will automatically be updated when you run code, and
+   you avoid having to "re-install" the package. However, since we use Cython
+   code in files that end with `.pyx`, those have to be re-compiled each time
+   we run the code. Thus, they automatically require another `python setup.py`
+   call anyway, so it seems like the distinction between install mode and
+   develop mode doesn't matter here. For example, if running a fictitious
+   `demo.py` script, I usually do this each time I run code:
 
    ```
    python setup.py install ; python examples/demo.py
@@ -66,40 +62,41 @@ script, we can do this to test:
    So far this setup is working fine for us that we haven't really seen a need
    to change things around.
 
-See `examples` for usage, and how to save videos. Simply run with `python
-examples/[script_name].py`.  You will need this package installed (see above)
-so that you can use commands like `from gym_cloth import ...` regardless of
-your current directory.
+For quick testing, try running the policies using the provided
+`examples/analytic.py` script. This is the main script that we use to generate
+demonstration data for experiments. For example, this should work right away:
 
+```
+python examples/analytic.py oracle --max_episodes=400 --seed=1336 --tier=1
+```
+
+To actually *visualize* the renderer, you need to install it, *and* change the
+appropriate config file in `cfg/` so that the `render_opengl` setting is
+`True`.
 
 
 ## Renderer Installation
 
 These instructions have been tested on Mac OS X and Ubuntu 18.04. For some
-reason, we have not been able to get this working for Ubuntu 16.04. Furthermore,
-for Ubuntu 18.04, you might need sudo access for `make -j4 install`.
-
-Currently the simulation is rendered in an independent C++ program. To set up
-the renderer,
+reason, we have not been able to get this working for Ubuntu 16.04.  *For
+Ubuntu 18.04, you might need sudo access for `make -j4 install`.* Currently the
+simulation is rendered in an independent C++ program. To set up the renderer,
 
 1. Navigate to `render/ext/libzmq`. Run
 ```
-mkdir build
-cd build
+mkdir build; cd build
 cmake ..
 make -j4 install
 ```
 2. Navigate to `render/ext/cppzmq`. Again run
 ```
-mkdir build
-cd build
+mkdir build; cd build
 cmake ..
 make -j4 install
 ```
 3. Navigate to `render`. Run
 ```
-mkdir build
-cd build
+mkdir buildl; cd build
 cmake ..
 make
 ```
