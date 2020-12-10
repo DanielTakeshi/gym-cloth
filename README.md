@@ -23,14 +23,7 @@ Platforms tested:
 - Ubuntu 16.04 (renderer not working, unfortunately)
 - Ubuntu 18.04 (renderer working)
 
-Python versions tested:
-
-- Python 2.7
-- Python 3.6
-
-The code is hopefully agnostic to Python 2 or 3, however **we strongly recommend
-using Python 3. We have not done any serious Python 2 testing since the Jurassic Era.**
-
+Please use **Python 3.6**.
 
 ## Installation and Code Usage
 
@@ -109,9 +102,6 @@ that it is working, go to `render/build` and run `./clothsim` on the command
 line. You should see an empty window appear. There should be no segmentation
 faults.** Occasionally I have seen it fail on installed machines, but normally
 rebooting fixes it.
-
-The renderer will have to be run in an independent process. See
-`examples/demo.py` for how we can do this within Python.
 
 Notes:
 
