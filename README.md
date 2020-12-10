@@ -96,7 +96,7 @@ make -j4 install
 ```
 3. Navigate to `render`. Run
 ```
-mkdir buildl; cd build
+mkdir build; cd build
 cmake ..
 make
 ```
