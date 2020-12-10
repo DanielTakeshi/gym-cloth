@@ -56,7 +56,7 @@ using Python 3. We have not done any serious Python 2 testing since the Jurassic
    `demo.py` script, I usually do this each time I run code:
 
    ```
-   python setup.py install ; python examples/demo.py
+   python setup.py install ; python examples/<script_name>.py
    ```
 
    So far this setup is working fine for us that we haven't really seen a need
@@ -88,12 +88,15 @@ mkdir build; cd build
 cmake ..
 make -j4 install
 ```
+
 2. Navigate to `render/ext/cppzmq`. Again run
 ```
 mkdir build; cd build
 cmake ..
 make -j4 install
 ```
+(This step may not actually work.)
+
 3. Navigate to `render`. Run
 ```
 mkdir build; cd build
@@ -122,7 +125,13 @@ Notes:
   camera angles, be sure to re-compile the renderer using the instructions
   above. You only need to re-compile `render`, not the other two.
 
+- Note (Updated December 2020): with Ubuntu 18.04 and a conda environment,
+  running `./clothsim` seems to result in a frozen screen. Also, the second
+  step of the installation above seems to fail (though [this fix may help][5]),
+  but nonetheless, running it with cloth in it will seem to work normally.
+
 [1]:https://github.com/openai/gym/tree/master/gym/envs
 [2]:https://github.com/openai/gym/pull/1314
 [3]:https://arxiv.org/abs/1910.04854
 [4]:https://sites.google.com/view/fabric-smoothing
+[5]:https://github.com/zeromq/cppzmq/issues/334
