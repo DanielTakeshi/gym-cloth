@@ -1,15 +1,7 @@
 # Gym Cloth
 
-Quick logistics overview: this is *one* of the code bases used in our paper "Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor" with [arXiv here][3] and [project website here][4]. The arXiv version will have the most up-to-date version of the paper. If you find the code or other related resources useful, please consider citing the paper:
+Quick logistics overview: this is *one* of the code bases used in our paper "Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor" with [arXiv here][3] and [project website here][4]. The arXiv version will have the most up-to-date version of the paper. 
 
-```
-@inproceedings{seita_fabrics_2020,
-    author = {Daniel Seita and Aditya Ganapathi and Ryan Hoque and Minho Hwang and Edward Cen and Ajay Kumar Tanwani and Ashwin Balakrishna and Brijen Thananjeyan and Jeffrey Ichnowski and Nawid Jamali and Katsu Yamane and Soshi Iba and John Canny and Ken Goldberg},
-    title = {{Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor}},
-    booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-    Year = {2020}
-}
-```
 
 <hr>
 
@@ -119,6 +111,19 @@ Notes:
   running `./clothsim` seems to result in a frozen screen. Also, the second
   step of the installation above seems to fail (though [this fix may help][5]),
   but nonetheless, running it with cloth in it will seem to work normally.
+
+## Citation
+
+If you find the code or other related resources useful, please consider citing the paper:
+
+```
+@inproceedings{seita_fabrics_2020,
+    author = {Daniel Seita and Aditya Ganapathi and Ryan Hoque and Minho Hwang and Edward Cen and Ajay Kumar Tanwani and Ashwin Balakrishna and Brijen Thananjeyan and Jeffrey Ichnowski and Nawid Jamali and Katsu Yamane and Soshi Iba and John Canny and Ken Goldberg},
+    title = {{Deep Imitation Learning of Sequential Fabric Smoothing From an Algorithmic Supervisor}},
+    booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+    Year = {2020}
+}
+```
 
 [1]:https://github.com/openai/gym/tree/master/gym/envs
 [2]:https://github.com/openai/gym/pull/1314
