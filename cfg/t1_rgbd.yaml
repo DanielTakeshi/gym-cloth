@@ -1,5 +1,3 @@
-# Demonstrate tears and out of bounds stuff.
-
 # ------------------------------------------------------------------------------
 # Cloth parameters, should be loosely based on `cloth_from_184.,yaml`.
 # ------------------------------------------------------------------------------
@@ -48,7 +46,7 @@ env:
     oracle_reveal: 'False'  # If 'True', we compute the occlusion vector every time Blender is called (should only be True if using corner revealing demonstrator)
     use_depth: 'False'      # If 'True', we use depth images for the training process instead of color images
     use_dom_rand: 'True'    # If 'True', we use domain randomization (camera pose, color, etc.)
-    use_rgbd: 'True'
+    use_rgbd: 'True'        # ???
 
 # ------------------------------------------------------------------------------
 # Initialization parameters. Let's assume we can pinpoint one of the four
@@ -61,7 +59,7 @@ env:
 init:
     type: 'tier1'               # Options: tier1, tier2, tier3
     debug_matplotlib: False     # If we show matplotlib video of the initialization
-    render_opengl: True # If we show opengl rendering
+    render_opengl: True         # If we show opengl rendering
 
 # ------------------------------------------------------------------------------
 # Logging. We add the date before the last `.log` in the file name.
