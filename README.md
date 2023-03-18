@@ -37,15 +37,14 @@ Please use **Python 3.6**.
    code in files that end with `.pyx`, those have to be re-compiled each time
    we run the code. Thus, they automatically require another `python setup.py`
    call anyway, so it seems like the distinction between install mode and
-   develop mode doesn't matter here. For example, if running a fictitious
-   `demo.py` script, I usually do this each time I run code:
+   develop mode doesn't matter here. For example, if running a script, I
+   usually do this each time I run code:
 
    ```
    python setup.py install ; python examples/<script_name>.py
    ```
 
-   So far this setup is working fine for us that we haven't really seen a need
-   to change things around.
+   So far this setup is working fine for us.
 
 For quick testing, try running the policies using the provided
 `examples/analytic.py` script. This is the main script that we use to generate
