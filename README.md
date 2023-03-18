@@ -79,7 +79,8 @@ mkdir build; cd build
 cmake ..
 make -j4 install
 ```
-(This step may not actually work.)
+
+(Edit: this step seems to not be necessary, see December 2020 comment below.)
 
 3. Navigate to `render`. Run
 ```
